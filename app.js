@@ -48,8 +48,8 @@ app.get('/faucet_stat', async(req, res) => {
     const now = new Date().toLocaleString('en-US', {timeZone: 'Asia/Tehran'});
     let response = {1: false, 2: false};
     result.forEach(i => {
-      const from = new Date(`${i.s_date} ${i.s_from}`).toLocaleString('en-US', {timeZone: 'Asia/Tehran'});
-      const to = new Date(`${i.s_date} ${i.s_to}`).toLocaleString('en-US', {timeZone: 'Asia/Tehran'});
+      const from = new Date(`${i.s_date} ${i.s_from}`).toLocaleString('en-US');
+      const to = new Date(`${i.s_date} ${i.s_to}`).toLocaleString('en-US');
       if(from <= now && now <= to) {
         response[i.faucet_id] = true;
       }
