@@ -45,11 +45,11 @@ app.post('/update_schedule', async(req, res)=>{
 app.get('/faucet_stat', async(req, res) => {
   try {
     const result = await get_faucet_stat();
-    const now = new Date();
+    const now = new Date().toLocaleString({timeZone: 'Asia/Tehran'});
     let response = {1: false, 2: false};
     result.forEach(i => {
-      const from = new Date(`${i.s_date} ${i.s_from}`);
-      const to = new Date(`${i.s_date} ${i.s_to}`);
+      const from = new Date(`${i.s_date} ${i.s_from}`).toLocaleString({timeZone: 'Asia/Tehran'});
+      const to = new Date(`${i.s_date} ${i.s_to}`).toLocaleString({timeZone: 'Asia/Tehran'});
       if(from <= now && now <= to) {
         response[i.faucet_id] = true;
       }
