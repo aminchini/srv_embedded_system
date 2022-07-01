@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors');
 const { 
   get_status, 
   update_schedule, 
@@ -12,6 +13,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({extended: false}));
 app.use(morgan('combined'));
+app.use(cors());
 
 const faucet_schedule_stat = async() => {
   const result = await get_faucet_stat();
@@ -49,7 +51,12 @@ app.get('/status', async(req, res) => {
 
 app.post('/update_schedule', async(req, res)=>{
   try{
-    const {faucet_id, schedule} = req.body;
+    let {faucet_id, schedule} = req.body;
+    schedule = schedule.map( i => {
+      const s_from = i.s_from + ':00';
+      const s_to = i.s_to + ':00';
+      return {...i, s_from, s_to}
+    })
     await update_schedule(faucet_id, schedule);
     res.json({status: 'OK'})
   } catch(error){
