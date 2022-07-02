@@ -72,7 +72,7 @@ const update_faucet_stat = async(faucet_id, stat, s_id, now) => {
     const client = await pool.connect();
     const query1 = `update faucets set is_on = $1 where faucet_id = $2`;
     await client.query(query1, [stat, faucet_id]);
-    if (s_id) {
+    if (s_id && stat) {
       const schedule_ids = s_id.split(',');
       const query2 = `
       with temp as(select unnest($1::int[]) schedule_id, $2 feedback_time)
