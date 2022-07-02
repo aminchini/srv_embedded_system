@@ -56,9 +56,11 @@ const update_schedule = async(faucet_id, schedule) => {
 const get_faucet_stat = async() => {
   try{
     const client = await pool.connect();
+    const now = new Date().toLocaleString('en-US', {timeZone: 'Asia/Tehran'});
+    const now_date = now.split(', ')[0];
     const query = `
     select id, faucet_id, s_date::TEXT, s_from, s_to
-    from schedules where s_date = NOW()::date;`;
+    from schedules where s_date = '${now_date}'::DATE;`;
     const {rows} = await client.query(query);
     client.release();
     return rows;
