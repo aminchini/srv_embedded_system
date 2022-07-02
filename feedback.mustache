@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Feedback Page</title>
+    </head>
+    <body>
+        <h1>Received Feedbacks</h1>
+        {{#has_f}}
+            <h2>Feedback list of <b>"{{time}}"</b> :</h2>
+            <ul style="list-style-type:disc">
+                {{#f_times}}
+                <li>{{.}}</li>
+                {{/f_times}}
+            </ul>
+        {{/has_f}}
+        {{^has_f}}
+            <h2>No feedback received for schedule <b>"{{time}}"</b>.</h2> 
+        {{/has_f}}
+    </body>
+</html>

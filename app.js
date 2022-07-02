@@ -2,11 +2,14 @@ require('dotenv').config()
 const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
+const { readFileSync } = require('fs');
+const { render } = require('mustache');
 const { 
   get_status, 
   update_schedule, 
   get_faucet_stat,
-  update_faucet_stat 
+  update_faucet_stat,
+  get_f_page_data
 } = require('./DB');
 
 const app = express();
@@ -18,15 +21,16 @@ app.use(cors());
 const faucet_schedule_stat = async() => {
   const result = await get_faucet_stat();
   const now = new Date().toLocaleString('en-US', {timeZone: 'Asia/Tehran'});
-  let response = {1: false, 2: false};
+  let response = {1: false, 2: false, s_id: []};
   result.forEach(i => {
     const from = new Date(`${i.s_date} ${i.s_from}`).toLocaleString('en-US');
     const to = new Date(`${i.s_date} ${i.s_to}`).toLocaleString('en-US');
     if(new Date(from) <= new Date(now) && new Date(now) <= new Date(to)) {
       response[i.faucet_id] = true;
+      response.s_id.push(i.id);
     }
-  })
-  return response;
+  });
+  return {...response, s_id: response.s_id.join(',')};
 };
 
 //Frontend side endpoints
@@ -40,7 +44,7 @@ app.get('/status', async(req, res) => {
       response[i.faucet_id] = {is_on: i.is_on, is_ok, schedule: []}
     });
     result[0].forEach(i => {
-      response[i.faucet_id].schedule.push({s_from: i.s_from, s_to: i.s_to})
+      response[i.faucet_id].schedule.push({s_from: i.s_from, s_to: i.s_to, link:`${process.env.SERVER_URL}/f_page/${i.id}`})
     });
     res.json(response)
   } catch(error){
@@ -79,11 +83,29 @@ app.get('/faucet_stat', async(req, res) => {
 
 app.post('/feedback', async(req, res) => {
   try{
-    const {faucet_id, stat} = req.body;
-    await update_faucet_stat(faucet_id, stat);
+    const {faucet_id, stat, s_id} = req.body;
+    const now = new Date()
+      .toLocaleString('en-US', {timeZone: 'Asia/Tehran', hour12: false})
+      .split(', ')[1];
+    await update_faucet_stat(faucet_id, stat, s_id, now);
     res.json({status: 'OK'})
   } catch (error) {
     console.log(`[ERROR] /feedback endpoint #$# ${error.message} #$#`);
+    res.status(500).json({message: 'An error occurred!'});
+  }
+});
+
+app.get('/f_page/:id', async(req, res) => {
+  try{
+    const {id} = req.params;
+    const data = await get_f_page_data(id);
+    const has_f = data && data.f_times && data.f_times.length ? true : false;
+    const view = {...data, has_f};
+    const template = readFileSync('./feedback.mustache', 'utf8');
+    const response = render(template, view);
+    res.send(response)
+  } catch (error) {
+    console.log(`[ERROR] /f_page endpoint #$# ${error.message} #$#`);
     res.status(500).json({message: 'An error occurred!'});
   }
 });

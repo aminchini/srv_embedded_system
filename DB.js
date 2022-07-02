@@ -12,10 +12,13 @@ const pool = new Pool({
 const get_status = async() => {
   try{
     const client = await pool.connect();
+    const now = new Date().toLocaleString('en-US', {timeZone: 'Asia/Tehran'});
+    const now_date = now.split(', ')[0];
     const query1 = `
-    select faucet_id, s_from, s_to
-    from schedules where s_date = NOW()::date;`;
-    const query2 = `select * from faucets;`;
+    SELECT id, faucet_id, s_from, s_to
+    FROM schedules WHERE s_date = '${now_date}'::DATE
+    ORDER BY 1;`;
+    const query2 = `SELECT * FROM faucets;`;
     const {rows: rows1} = await client.query(query1);
     const {rows: rows2} = await client.query(query2);
     client.release();
@@ -29,8 +32,12 @@ const update_schedule = async(faucet_id, schedule) => {
   try{
     const client = await pool.connect();
     const s_dates = schedule.map(({s_date})=>s_date)
-    const query1 = `delete from schedules where faucet_id = ${faucet_id} AND s_date IN ('` + s_dates.join('\'::DATE,\'') + '\'::DATE);'
-    let query2 = 'insert into schedules(faucet_id, s_date, s_from, s_to) values';
+    const query1 = `
+    DELETE FROM schedules 
+    WHERE faucet_id = ${faucet_id} 
+      AND s_date IN ('` + s_dates.join('\'::DATE,\'') + '\'::DATE)'
+      + 'AND id NOT IN (SELECT DISTINCT schedule_id id FROM feedback);';
+    let query2 = 'INSERT INTO schedules(faucet_id, s_date, s_from, s_to) VALUES';
     schedule.forEach((i, index) => {
       if (index != schedule.length-1){
         query2 += `(${faucet_id}, '${i.s_date}'::DATE, '${i.s_from}', '${i.s_to}'),`;
@@ -50,7 +57,7 @@ const get_faucet_stat = async() => {
   try{
     const client = await pool.connect();
     const query = `
-    select faucet_id, s_date::TEXT, s_from, s_to
+    select id, faucet_id, s_date::TEXT, s_from, s_to
     from schedules where s_date = NOW()::date;`;
     const {rows} = await client.query(query);
     client.release();
@@ -60,14 +67,46 @@ const get_faucet_stat = async() => {
   }
 };
 
-const update_faucet_stat = async(faucet_id, stat) => {
+const update_faucet_stat = async(faucet_id, stat, s_id, now) => {
   try{
     const client = await pool.connect();
-    const query = `update faucets set is_on = $1 where faucet_id = $2`;
-    await client.query(query, [stat, faucet_id]);
+    const query1 = `update faucets set is_on = $1 where faucet_id = $2`;
+    await client.query(query1, [stat, faucet_id]);
+    if (s_id) {
+      const schedule_ids = s_id.split(',');
+      const query2 = `
+      with temp as(select unnest($1::int[]) schedule_id, $2 feedback_time)
+      insert into feedback 
+        select schedule_id, feedback_time from temp t
+        left join schedules s on(t.schedule_id = s.id)
+        left join faucets f using(faucet_id)
+        where f.is_on;`
+      await client.query(query2, [schedule_ids, now]);
+    }
     client.release();
   } catch (error){
     console.log(`[ERROR] get_faucet_stat query #$# ${error.message} #$#`);
+  }
+}
+
+const get_f_page_data = async(id) => {
+  try{
+    const client = await pool.connect();
+    const query = `
+    WITH d1 AS(
+      SELECT (s_date::TEXT || ' from ' || s_from || ' to ' || s_to) AS time
+      FROM schedules WHERE id = $1
+    ), d2 AS(
+      SELECT array_agg(feedback_time) f_times
+      FROM feedback F
+      WHERE schedule_id = $1
+    )
+    SELECT f_times, time from d1, d2;`;
+    const {rows} = await client.query(query, [id]);
+    client.release();
+    return rows[0];
+  } catch (error){
+    console.log(`[ERROR] get_f_page_data query #$# ${error.message} #$#`);
   }
 }
 
@@ -75,5 +114,6 @@ module.exports = {
   get_status,
   update_schedule,
   get_faucet_stat,
-  update_faucet_stat
+  update_faucet_stat,
+  get_f_page_data
 };
