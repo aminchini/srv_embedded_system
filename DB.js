@@ -78,11 +78,13 @@ const update_faucet_stat = async(faucet_id, stat, s_id, now) => {
       const schedule_ids = s_id.split(',');
       const query2 = `
       with temp as(select unnest($1::int[]) schedule_id, $2 feedback_time)
-      insert into feedback 
-        select schedule_id, feedback_time from temp t
-        left join schedules s on(t.schedule_id = s.id)
-        left join faucets f using(faucet_id)
-        where f.is_on;`
+      insert into feedback
+      select schedule_id, feedback_time from temp t
+      where not exists(select * from feedback fe where fe.schedule_id = t.schedule_id)
+      OR (
+        select DATE_PART('second',to_timestamp(t.feedback_time, 'HH24:MI:SS') - to_timestamp(max(f.feedback_time), 'HH24:MI:SS'))
+        from feedback f where f.schedule_id = t.schedule_id
+      ) > 10;`
       await client.query(query2, [schedule_ids, now]);
     }
     client.release();
