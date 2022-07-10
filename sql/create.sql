@@ -23,3 +23,14 @@ CREATE TABLE feedback
     schedule_id INT REFERENCES schedules(id),
     feedback_time text
 );
+
+
+GRANT ALL ON DATABASE embedded_system TO embedded;
+
+GRANT ALL ON TABLE faucets TO embedded;
+GRANT ALL ON SEQUENCE faucets_faucet_id_seq TO embedded;
+
+GRANT ALL ON TABLE schedules TO embedded;
+GRANT ALL ON SEQUENCE schedules_id_seq TO embedded;
+
+GRANT ALL ON TABLE feedback TO embedded;
