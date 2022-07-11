@@ -24,6 +24,14 @@ CREATE TABLE feedback
     feedback_time text
 );
 
+-- Create a new table called 'report' in schema 'public'
+CREATE TABLE report
+(
+    id SERIAL PRIMARY KEY, -- primary key column
+    report_time TEXT NOT NULL,
+    report_data TEXT NOT NULL
+);
+
 
 GRANT ALL ON DATABASE embedded_system TO embedded;
 
@@ -34,3 +42,6 @@ GRANT ALL ON TABLE schedules TO embedded;
 GRANT ALL ON SEQUENCE schedules_id_seq TO embedded;
 
 GRANT ALL ON TABLE feedback TO embedded;
+
+GRANT ALL ON TABLE report TO embedded;
+GRANT ALL ON SEQUENCE report_id_seq TO embedded;
