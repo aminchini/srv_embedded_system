@@ -9,7 +9,9 @@ const {
   update_schedule, 
   get_faucet_stat,
   update_faucet_stat,
-  get_f_page_data
+  get_f_page_data,
+  add_report,
+  get_report
 } = require('./DB');
 
 const app = express();
@@ -106,6 +108,31 @@ app.get('/f_page/:id', async(req, res) => {
     res.send(response)
   } catch (error) {
     console.log(`[ERROR] /f_page endpoint #$# ${error.message} #$#`);
+    res.status(500).json({message: 'An error occurred!'});
+  }
+});
+
+app.post('/report', async(req, res) => {
+  try{
+    const data = JSON.stringify(req.body);
+    const now = new Date()
+      .toLocaleString('en-US', {timeZone: 'Asia/Tehran', hour12: false});
+    await add_report(now, data);
+    res.json({status: 'OK'})
+  } catch (error) {
+    console.log(`[ERROR] /report endpoint #$# ${error.message} #$#`);
+    res.status(500).json({message: 'An error occurred!'});
+  }
+});
+
+app.get('/', async(req, res) => {
+  try{
+    const data = await get_report();
+    const template = readFileSync('./report.mustache', 'utf8');
+    const response = render(template, {data});
+    res.send(response)
+  } catch (error) {
+    console.log(`[ERROR] / endpoint #$# ${error.message} #$#`);
     res.status(500).json({message: 'An error occurred!'});
   }
 });

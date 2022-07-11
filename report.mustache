@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Report Page</title>
+        <style>
+            table, th, td {
+              border: 1px double rgb(0, 0, 0);
+            }
+            th {
+              background-color: #96D4D4;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Here is the report table of sensor received data</h1>
+        <table style="width:100%; text-align: center;">
+            <tr>
+                <th>Report ID</th>
+                <th>Report Time</th>
+                <th>Report Data</th>
+            </tr>
+            {{#data}}
+            <tr>
+                <td>{{id}}</td>
+                <td>{{report_time}}</td>
+                <td>{{report_data}}</td>
+            </tr>
+            {{/data}}
+          </table>
+    </body>
+</html>

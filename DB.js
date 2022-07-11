@@ -114,10 +114,35 @@ const get_f_page_data = async(id) => {
   }
 }
 
+const add_report = async(now, data) => {
+  try{
+    const client = await pool.connect();
+    const query1 = `INSERT INTO report(report_time, report_data) VALUES($1, $2);`;
+    await client.query(query1, [now, data]);
+    client.release();
+  } catch (error){
+    console.log(`[ERROR] add_report query #$# ${error.message} #$#`);
+  }
+}
+
+const get_report = async(id) => {
+  try{
+    const client = await pool.connect();
+    const query = `SELECT * FROM report;`;
+    const {rows} = await client.query(query);
+    client.release();
+    return rows;
+  } catch (error){
+    console.log(`[ERROR] get_report query #$# ${error.message} #$#`);
+  }
+}
+
 module.exports = {
   get_status,
   update_schedule,
   get_faucet_stat,
   update_faucet_stat,
-  get_f_page_data
+  get_f_page_data,
+  add_report,
+  get_report
 };
